@@ -20,13 +20,13 @@ import java.nio.{ ByteBuffer, CharBuffer }
 import java.nio.charset.{ CharsetEncoder, CoderResult }
 import java.nio.channels.FileChannel
 
-import scala.util.control.NonFatal
+import akka.event.slf4j.Logger
 
+import scala.util.control.NonFatal
 import io.gatling.commons.stats.assertion.Assertion
 import io.gatling.commons.util.StringHelper._
 import io.gatling.commons.util.PathHelper._
 import io.gatling.core.config.GatlingFiles.simulationLogDirectory
-
 import boopickle.Default._
 import com.typesafe.scalalogging.StrictLogging
 import com.dongxiguo.fastring.Fastring.Implicits._
@@ -92,7 +92,8 @@ object LogFileDataWriter extends StrictLogging {
     def serialize(response: ResponseMessage): Fastring = {
       import response._
       import timings._
-      fast"${RequestRecordHeader.value}$Separator$scenario$Separator$userId$Separator${serializeGroups(groupHierarchy)}$Separator$name$Separator$startTimestamp$Separator$endTimestamp$Separator$status$Separator${serializeMessage(message)}${serializeExtraInfo(extraInfo)}$Eol"
+
+      fast"${RequestRecordHeader.value}$Separator$scenario$Separator$userId$Separator${serializeGroups(groupHierarchy)}$Separator$name$Separator$startTimestampNanoseconds$Separator${endTimestampNanoseconds}$Separator${responseTime}$Separator$status$Separator$allCount$Separator$okCount$Separator$koCount$Separator${serializeMessage(message)}${serializeExtraInfo(extraInfo)}$Eol"
     }
   }
 
@@ -100,7 +101,7 @@ object LogFileDataWriter extends StrictLogging {
 
     def serialize(group: GroupMessage): Fastring = {
       import group._
-      fast"${GroupRecordHeader.value}$Separator$scenario$Separator$userId$Separator${serializeGroups(groupHierarchy)}$Separator$startTimestamp$Separator$endTimestamp$Separator$cumulatedResponseTime$Separator$status$Eol"
+      fast"${GroupRecordHeader.value}$Separator$scenario$Separator$userId$Separator${serializeGroups(groupHierarchy)}$Separator$startTimestampNanoseconds$Separator$endTimestampNanoseconds$Separator$cumulatedResponseTime$Separator$status$Separator$allCount$Separator$okCount$Separator$koCount$Eol"
     }
   }
 
@@ -141,11 +142,14 @@ class LogFileDataWriter extends DataWriter[FileData] {
 
     import init._
 
-    val simulationLog = simulationLogDirectory(runMessage.runId)(configuration) / "simulation.log"
+    //val simulationLog = simulationLogDirectory(runMessage.runId)(configuration) / "simulation.log"
 
     val limit = configuration.data.file.bufferSize
 
-    val channel = new RandomAccessFile(simulationLog.toFile, "rw").getChannel
+    val raf = new RandomAccessFile("/home/gatling.log", "rw")
+    raf.seek(raf.length())
+
+    val channel = raf.getChannel
 
     val data = FileData(limit, ByteBuffer.allocate(limit * 2), configuration.core.charset.newEncoder, channel)
 
@@ -182,8 +186,8 @@ class LogFileDataWriter extends DataWriter[FileData] {
       val coderResult = encoder.encode(CharBuffer.wrap(string.unsafeChars), buffer, false)
       overflow = coderResult.isOverflow
     }
-    if (buffer.position >= limit || overflow)
-      flush(data, overflown = overflow)
+    //if (buffer.position >= limit || overflow)
+    flush(data, overflown = overflow)
   }
 
   override def onMessage(message: LoadEventMessage, data: FileData): Unit = message match {

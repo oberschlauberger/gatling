@@ -15,11 +15,11 @@
  */
 package io.gatling.core.stats.writer
 
-import io.gatling.commons.stats.Status
+import io.gatling.commons.stats.{ KO, OK, Status }
 import io.gatling.commons.stats.assertion.Assertion
 import io.gatling.core.config.GatlingConfiguration
 import io.gatling.core.session.Session
-import io.gatling.core.stats.message.{ ResponseTimings, MessageEvent }
+import io.gatling.core.stats.message.{ MessageEvent, ResponseTimings }
 
 case class ShortScenarioDescription(name: String, userCount: Int)
 
@@ -50,16 +50,36 @@ case class UserMessage(
 ) extends LoadEventMessage
 
 case class ResponseMessage(
-  scenario:       String,
-  userId:         Long,
-  groupHierarchy: List[String],
-  name:           String,
-  timings:        ResponseTimings,
-  status:         Status,
-  responseCode:   Option[String],
-  message:        Option[String],
-  extraInfo:      List[Any]
-) extends LoadEventMessage
+    scenario:       String,
+    userId:         Long,
+    groupHierarchy: List[String],
+    name:           String,
+    timings:        ResponseTimings,
+    status:         Status,
+    responseCode:   Option[String],
+    message:        Option[String],
+    extraInfo:      List[Any]
+) extends LoadEventMessage {
+  val allCount: Int = { 1 }
+  val okCount: Int = {
+    status match {
+      case OK => 1
+      case KO => 0
+    }
+  }
+  val koCount: Int = {
+    status match {
+      case OK => 0
+      case KO => 1
+    }
+  }
+  val startTimestampNanoseconds: Long = {
+    timings.startTimestamp * 1000000
+  }
+  val endTimestampNanoseconds: Long = {
+    timings.endTimestamp * 1000000
+  }
+}
 
 case class GroupMessage(
     scenario:              String,
@@ -71,6 +91,25 @@ case class GroupMessage(
     status:                Status
 ) extends LoadEventMessage {
   val duration = (endTimestamp - startTimestamp).toInt
+  val allCount: Int = { 1 }
+  val okCount: Int = {
+    status match {
+      case OK => 1
+      case KO => 0
+    }
+  }
+  val koCount: Int = {
+    status match {
+      case OK => 0
+      case KO => 1
+    }
+  }
+  val startTimestampNanoseconds: Long = {
+    startTimestamp * 1000000
+  }
+  val endTimestampNanoseconds: Long = {
+    endTimestamp * 1000000
+  }
 }
 
 case class ErrorMessage(message: String, date: Long) extends LoadEventMessage

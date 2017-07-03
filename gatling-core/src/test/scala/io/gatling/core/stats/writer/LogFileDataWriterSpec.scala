@@ -31,14 +31,14 @@ class LogFileDataWriterSpec extends BaseSpec {
   "file data writer" should "log a standard request record" in {
     val record = new ResponseMessage("scenario", 0, Nil, "requestName", ResponseTimings(2L, 5L), OK, Some("200"), Some("message"), Nil)
 
-    logMessage(record) shouldBe s"REQUEST${Separator}scenario${Separator}0${Separator}${Separator}requestName${Separator}2${Separator}5${Separator}OK${Separator}message" + Eol
+    logMessage(record) shouldBe s"REQUEST${Separator}scenario${Separator}0${Separator}${Separator}requestName${Separator}2000000${Separator}5000000${Separator}3${Separator}OK${Separator}1${Separator}1${Separator}0${Separator}message" + Eol
   }
 
   it should "append extra info to request records" in {
     val extraInfo: List[String] = List("some", "extra info", "for the log")
     val record = new ResponseMessage("scenario", 0, Nil, "requestName", ResponseTimings(2L, 5L), OK, Some("200"), Some("message"), extraInfo)
 
-    logMessage(record) shouldBe s"REQUEST${Separator}scenario${Separator}0${Separator}${Separator}requestName${Separator}2${Separator}5${Separator}OK${Separator}message${Separator}some${Separator}extra info${Separator}for the log" + Eol
+    logMessage(record) shouldBe s"REQUEST${Separator}scenario${Separator}0${Separator}${Separator}requestName${Separator}2000000${Separator}5000000${Separator}3${Separator}OK${Separator}1${Separator}1${Separator}0${Separator}message${Separator}some${Separator}extra info${Separator}for the log" + Eol
   }
 
   "sanitize" should "sanitize extra info so that simulation log format is preserved" in {
